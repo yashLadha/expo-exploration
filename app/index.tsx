@@ -83,7 +83,6 @@ export default function Index() {
   let replaceCards = useRef(false).current;
 
   const [cards, setCards] = useState({
-    replaceCards: false,
     cardsData: data.map((obj, index) => {
       return new CardState(obj.color, index);
     }),
@@ -109,7 +108,6 @@ export default function Index() {
         setCards((prev) => {
           return {
             ...prev,
-            replaceCards: true,
             cardsData: [...prev.cardsData.slice(1), prev.cardsData[0]].map(
               (item, index) => {
                 return new CardState(item.colorInfo, index);

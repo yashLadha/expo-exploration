@@ -5,7 +5,10 @@ interface CardProps {
   color: string;
   zIndex: number;
   opacity: number;
-  scale: number;
+  scale: {
+    config: Animated.InterpolationConfigType;
+    animatValue: Animated.Value;
+  };
   bottomPos?: number | `${number}%`;
   translateX?: Animated.Value;
 }
@@ -22,7 +25,7 @@ export default function AnimatedCard(props: CardProps) {
           bottom: props.bottomPos,
           opacity: props.opacity,
           transform: [
-            { scale: props.scale },
+            { scale: props.scale.animatValue.interpolate(props.scale.config) },
             { translateX: props.translateX || 1.0 },
           ],
         },

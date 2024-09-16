@@ -12,69 +12,15 @@ import { useState } from "react";
 // with next index and follow a geometric progression.
 const SCALE_RATIO = 0.89;
 
-export default function Index() {
-  const cardsPan = new Animated.ValueXY();
-  let replaceCardsState = false;
-  const [cardsState, setCardsState] = useState(data);
+  function determineZIndexPos(index: number): number {
+    return -index;
+  }
 
-  const cardReleaseHandler = () => {
-    Animated.timing(cardsPan, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      if (replaceCardsState) {
-        setCardsState((prev) => {
-          return [...prev.slice(1), prev[0]];
-        });
-      }
-    });
-  };
-
-  const cardsPanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onStartShouldSetPanResponderCapture: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponderCapture: () => true,
-    onPanResponderMove: (event, gestureState) => {
-      replaceCardsState = false;
-      if (Math.abs(gestureState.dx) > 100) {
-        replaceCardsState = true;
-      }
-      cardsPan.setValue({ x: gestureState.dx, y: gestureState.dy });
-    },
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderRelease: () => {
-      cardReleaseHandler();
-    },
-  });
-
-  return (
-    <>
-      <Stack.Screen options={{ title: "Index" }} />
-      <View style={styles.container}>
-        {Object.entries(cardsState).map(([k, v], index) => {
-          return (
-            <AnimatedCard
-              key={index}
-              color={v.color}
-              zIndex={-index}
-              scale={determineScalePos(index)}
-              bottomPos={determineBottomPos(index)}
-              opacity={determineOpacity(index)}
-              translateX={determineTranslateX(index)}
-              responseHandlers={
-                index == 0 ? cardsPanResponder.panHandlers : undefined
-              }
-            />
-          );
-        })}
-      </View>
-    </>
-  );
-
-  function determineTranslateX(index: number): Animated.Value | undefined {
-    return index == 0 ? cardsPan.x : undefined;
+  function determineTranslateX(
+    translationValue: Animated.Value,
+    index: number
+  ): Animated.Value | undefined {
+    return index == 0 ? translationValue : undefined;
   }
 
   function determineOpacity(index: number): number {
@@ -90,7 +36,140 @@ export default function Index() {
   function determineScalePos(index: number): number {
     return 1.0 * SCALE_RATIO ** index;
   }
-}
+
+  class CardState {
+    private color: string;
+    private trackingIndex: number;
+    private currScaleRatio: number;
+    private zIndexPos: number;
+    private opacityVal: number;
+    private bottomPosVal?: number | `${number}%`;
+
+    public constructor(color: string, index: number) {
+      this.color = color;
+      this.trackingIndex = index - 1;
+      this.currScaleRatio = determineScalePos(index);
+      this.zIndexPos = determineZIndexPos(index);
+      this.opacityVal = determineOpacity(index);
+      this.bottomPosVal = determineBottomPos(index);
+    }
+
+    get colorInfo() {
+      return this.color;
+    }
+
+    get scaleRatio() {
+      return this.currScaleRatio;
+    }
+
+    get nextIndex() {
+      return this.trackingIndex;
+    }
+
+    get zIndex() {
+      return this.zIndexPos;
+    }
+
+    get opacity() {
+      return this.opacityVal;
+    }
+
+    get bottomPos() {
+      return this.bottomPosVal;
+    }
+  }
+
+  export default function Index() {
+    const cardsPan = new Animated.ValueXY();
+    const stackAnim = new Animated.Value(0);
+    const [cards, setCards] = useState({
+      replaceCards: false,
+      cardsData: data.map((obj, index) => {
+        return new CardState(obj.color, index);
+      }),
+    });
+
+    const cardReleaseHandler = () => {
+      Animated.timing(cardsPan, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      Animated.timing(stackAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        stackAnim.setValue(0);
+        // if (cardsState.replaceCards) {
+        setCards((prev) => {
+          return {
+            ...prev,
+            replaceCards: true,
+            cardsData: [...prev.cardsData.slice(1), prev.cardsData[0]],
+          };
+        });
+        // }
+      });
+    };
+
+    const cardsPanResponder = PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderMove: (event, gestureState) => {
+        if (Math.abs(gestureState.dx) > 100) {
+          // setCards((prev) => ({
+          //   ...prev,
+          //   replaceCards: true,
+          // }));
+        }
+        cardsPan.setValue({ x: gestureState.dx, y: gestureState.dy });
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: () => {
+        cardReleaseHandler();
+      },
+    });
+
+    function getNextScaleRatio(card: CardState): number {
+      return cards.cardsData[
+        (cards.cardsData.length + card.nextIndex) % cards.cardsData.length
+      ].scaleRatio;
+    }
+
+    return (
+      <>
+        <Stack.Screen options={{ title: "Index" }} />
+        <View style={styles.container}>
+          {Object.entries(cards.cardsData).map(([k, v], index) => {
+            return (
+              <AnimatedCard
+                key={index}
+                color={v.colorInfo}
+                zIndex={v.zIndex}
+                scale={{
+                  animatValue: stackAnim,
+                  config: {
+                    inputRange: [0, 1],
+                    outputRange: [v.scaleRatio, getNextScaleRatio(v)],
+                  },
+                }}
+                bottomPos={v.bottomPos}
+                opacity={v.opacity}
+                translateX={determineTranslateX(cardsPan.x, index)}
+                responseHandlers={
+                  index == 0 ? cardsPanResponder.panHandlers : undefined
+                }
+              />
+            );
+          })}
+        </View>
+      </>
+    );
+  }
 
 const styles = StyleSheet.create({
   container: {

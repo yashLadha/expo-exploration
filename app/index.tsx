@@ -162,7 +162,7 @@ export default function Index() {
               color={v.colorInfo}
               zIndex={v.zIndex}
               scale={{
-                animatValue: stackAnim,
+                animateValue: stackAnim,
                 config: {
                   inputRange: [0, 1],
                   outputRange: [v.scaleRatio, getNextScaleRatio(v)],
@@ -170,7 +170,7 @@ export default function Index() {
               }}
               bottomPos={v.bottomPos}
               opacity={{
-                animatValue: stackAnim,
+                animateValue: stackAnim,
                 config: {
                   inputRange: [0, 1],
                   outputRange: [v.opacity, getNextOpacity(v)],

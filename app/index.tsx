@@ -12,27 +12,11 @@ import { useEffect, useRef, useState } from "react";
 // with next index and follow a geometric progression.
 const SCALE_RATIO = 0.89;
 
-function determineZIndexPos(index: number): number {
-  return -index;
-}
-
 function determineTranslateX(
   translationValue: Animated.Value,
   index: number
 ): Animated.Value | undefined {
   return index == 0 ? translationValue : undefined;
-}
-
-function determineOpacity(index: number): number {
-  return 1.0 - index / 10;
-}
-
-function determineBottomPos(index: number): number | `${number}%` | undefined {
-  return index != 0 ? `${41 + 1.5 * index}%` : undefined;
-}
-
-function determineScalePos(index: number): number {
-  return 1.0 * SCALE_RATIO ** index;
 }
 
 class CardState {
@@ -46,10 +30,26 @@ class CardState {
   public constructor(color: string, index: number) {
     this.color = color;
     this.trackingIndex = index - 1;
-    this.currScaleRatio = determineScalePos(index);
-    this.zIndexPos = determineZIndexPos(index);
-    this.opacityVal = determineOpacity(index);
-    this.bottomPosVal = determineBottomPos(index);
+    this.currScaleRatio = this.determineScalePos(index);
+    this.zIndexPos = this.determineZIndexPos(index);
+    this.opacityVal = this.determineOpacity(index);
+    this.bottomPosVal = this.determineBottomPos(index);
+  }
+
+  private determineOpacity(index: number): number {
+    return 1.0 - index / 10;
+  }
+
+  private determineZIndexPos(index: number): number {
+    return -index;
+  }
+
+  private determineBottomPos(index: number): number | `${number}%` | undefined {
+    return index != 0 ? `${41 + 1.5 * index}%` : undefined;
+  }
+
+  private determineScalePos(index: number): number {
+    return 1.0 * SCALE_RATIO ** index;
   }
 
   get colorInfo() {

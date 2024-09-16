@@ -4,7 +4,10 @@ interface CardProps {
   responseHandlers?: GestureResponderHandlers;
   color: string;
   zIndex: number;
-  opacity: number;
+  opacity: {
+    config: Animated.InterpolationConfigType;
+    animatValue: Animated.Value;
+  };
   scale: {
     config: Animated.InterpolationConfigType;
     animatValue: Animated.Value;
@@ -23,7 +26,7 @@ export default function AnimatedCard(props: CardProps) {
           zIndex: props.zIndex,
           backgroundColor: props.color,
           bottom: props.bottomPos,
-          opacity: props.opacity,
+          opacity: props.opacity.animatValue.interpolate(props.opacity.config),
           transform: [
             { scale: props.scale.animatValue.interpolate(props.scale.config) },
             { translateX: props.translateX || 1.0 },
